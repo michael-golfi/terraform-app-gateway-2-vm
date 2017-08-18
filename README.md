@@ -1,5 +1,15 @@
 # Deployment of the Azure Gateway with a Linux VM and a Bastion Host
 
+## Deploy Terraform Executor
+
+<a href="https://raw.githubusercontent.com/michael-golfi/terraform-test/twosubnet/template/azuredeploy.json?token=ABUv1LjKSwrP_i2Iq6C79tMoTfjUgTe9ks5ZoHd1wA%3D%3D" target="_blank">
+    <img src="http://azuredeploy.net/deploybutton.png"/>
+</a>
+
+<a href="https://raw.githubusercontent.com/michael-golfi/terraform-test/twosubnet/template/azuredeploy.parameters.json?token=ABUv1KfjMzkhTwDOBNYD9lOtLXgc6cBNks5ZoHeHwA%3D%3D" target="_blank">
+    <img src="http://armviz.io/visualizebutton.png"/>
+</a>
+
 ## Description
 
 This template allows you to deploy an Azure Gateway, that routes traffic to a Linux VM running NGNIX. The Linux VM does not have a public IP address, since it gets its IP from the private subnet behind the Application Gateway. 
