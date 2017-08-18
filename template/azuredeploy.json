@@ -176,7 +176,7 @@
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "name": "[concat(variables('vmName'),'/newuserscript')]",
-      "apiVersion": "[variables('computeApiVersion')]",
+      "apiVersion": "[providers('Microsoft.Compute','virtualMachines/extensions').apiVersions[0]]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
         "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
