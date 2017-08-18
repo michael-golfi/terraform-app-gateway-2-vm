@@ -5,104 +5,81 @@
     "adminUsername": {
       "type": "string",
       "metadata": {
-        "description": "Admin user name you will use to log on to the Virtual Machine."
+        "description": "User name for the Virtual Machine."
       }
     },
     "adminPassword": {
       "type": "securestring",
       "metadata": {
-        "description": "Password for the admin user name."
+        "description": "Password for the Virtual Machine."
       }
     },
-    "dnsNameForPublicIP": {
+    "dnsLabelPrefix": {
       "type": "string",
       "metadata": {
-        "description": "Put a unique DNS Name for the Public IP used to access the Virtual Machine."
+        "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
       }
     },
-    "virtualMachineSize": {
+    "ubuntuOSVersion": {
       "type": "string",
-      "defaultValue": "Standard_A1",
+      "defaultValue": "16.04.0-LTS",
       "allowedValues": [
-        "Standard_A1",
-        "Standard_A2",
-        "Standard_D1_v2",
-        "Standard_D2_v2",
-        "Standard_D3_v2",
-        "Standard_D4_v2",
-        "Basic_A1",
-        "Basic_A2"
+        "12.04.5-LTS",
+        "14.04.5-LTS",
+        "15.10",
+        "16.04.0-LTS"
       ],
       "metadata": {
-        "description": "This is the Azure Virtual Machine size, and will affect the cost. If you don't know, just leave the default value."
+        "description": "The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version."
       }
     }
   },
   "variables": {
-    "lowerCaseDNSName": "[toLower(parameters('dnsNameForPublicIP'))]",
+    "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'salinuxvm')]",
     "imagePublisher": "Canonical",
     "imageOffer": "UbuntuServer",
-    "networkSecurityGroupName": "[concat(variables('lowerCaseDNSName'), 'nsg')]",
-    "nicName": "vmnic",
+    "nicName": "myVMNic",
     "addressPrefix": "10.0.0.0/16",
-    "subnetName": "subnet",
+    "subnetName": "Subnet",
     "subnetPrefix": "10.0.0.0/24",
     "storageAccountType": "Standard_LRS",
-    "publicIPAddressName": "publicip",
+    "publicIPAddressName": "myPublicIP",
     "publicIPAddressType": "Dynamic",
-    "ubuntuOSVersion": "16.04-LTS",
-    "vmName": "vm",
-    "virtualNetworkName": "vnet",
+    "vmName": "MyUbuntuVM",
+    "vmSize": "Standard_A1",
+    "virtualNetworkName": "MyVNET",
     "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
-    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
-    "computeApiVersion": "2017-03-30",
-    "networkApiVersion": "2017-04-01"
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]"
   },
   "resources": [
     {
-      "apiVersion": "[variables('networkApiVersion')]",
-      "type": "Microsoft.Network/networkSecurityGroups",
-      "name": "[variables('networkSecurityGroupName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccountName')]",
+      "apiVersion": "2017-06-01",
       "location": "[resourceGroup().location]",
-      "properties": {
-        "securityRules": [
-          {
-            "name": "ssh",
-            "properties": {
-              "description": "SSH port",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "22",
-              "sourceAddressPrefix": "Internet",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 100,
-              "direction": "Inbound"
-            }
-          }
-        ]
-      }
+      "sku": {
+        "name": "[variables('storageAccountType')]"
+      },
+      "kind": "Storage",
+      "properties": {}
     },
     {
-      "apiVersion": "[variables('networkApiVersion')]",
+      "apiVersion": "2017-04-01",
       "type": "Microsoft.Network/publicIPAddresses",
       "name": "[variables('publicIPAddressName')]",
       "location": "[resourceGroup().location]",
       "properties": {
         "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
         "dnsSettings": {
-          "domainNameLabel": "[variables('lowerCaseDNSName')]"
+          "domainNameLabel": "[parameters('dnsLabelPrefix')]"
         }
       }
     },
     {
-      "apiVersion": "[variables('networkApiVersion')]",
+      "apiVersion": "2017-04-01",
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[variables('virtualNetworkName')]",
       "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]"
-      ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -113,23 +90,20 @@
           {
             "name": "[variables('subnetName')]",
             "properties": {
-              "addressPrefix": "[variables('subnetPrefix')]",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-              }
+              "addressPrefix": "[variables('subnetPrefix')]"
             }
           }
         ]
       }
     },
     {
-      "apiVersion": "[variables('networkApiVersion')]",
+      "apiVersion": "2017-04-01",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('nicName')]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
-        "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
-        "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
+        "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
       ],
       "properties": {
         "ipConfigurations": [
@@ -149,16 +123,17 @@
       }
     },
     {
-      "apiVersion": "[variables('computeApiVersion')]",
+      "apiVersion": "2017-03-30",
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[variables('vmName')]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
       ],
       "properties": {
         "hardwareProfile": {
-          "vmSize": "[parameters('virtualMachineSize')]"
+          "vmSize": "[variables('vmSize')]"
         },
         "osProfile": {
           "computerName": "[variables('vmName')]",
@@ -169,14 +144,19 @@
           "imageReference": {
             "publisher": "[variables('imagePublisher')]",
             "offer": "[variables('imageOffer')]",
-            "sku": "[variables('ubuntuOSVersion')]",
+            "sku": "[parameters('ubuntuOSVersion')]",
             "version": "latest"
           },
           "osDisk": {
-            "caching": "ReadWrite",
-            "createOption": "FromImage",
-            "diskSizeGB": "100"
-          }
+            "createOption": "FromImage"
+          },
+          "dataDisks": [
+            {
+              "diskSizeGB": "1023",
+              "lun": 0,
+              "createOption": "Empty"
+            }
+          ]
         },
         "networkProfile": {
           "networkInterfaces": [
@@ -184,6 +164,12 @@
               "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]"
             }
           ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": "true",
+            "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob)]"
+          }
         }
       }
     },
@@ -197,16 +183,26 @@
       ],
       "properties": {
         "publisher": "Microsoft.Azure.Extensions",
-		"type": "CustomScript",
-		"typeHandlerVersion": "2.0",
-		"autoUpgradeMinorVersion": true,
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
+        "autoUpgradeMinorVersion": true,
         "settings": {
           "fileUris": [
-            "https://raw.githubusercontent.com/michael-golfi/terraform-test/master/scripts/install.sh"
+            "https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/scripts/install.sh"
           ],
           "commandToExecute": "bash install.sh"
         }
       }
     }
-  ]
+  ],
+  "outputs": {
+    "hostname": {
+      "type": "string",
+      "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]"
+    },
+    "sshCommand": {
+      "type": "string",
+      "value": "[concat('ssh ', parameters('adminUsername'), '@', reference(variables('publicIPAddressName')).dnsSettings.fqdn)]"
+    }
+  }
 }
