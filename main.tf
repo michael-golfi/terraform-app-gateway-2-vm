@@ -92,6 +92,18 @@ resource "azurerm_network_interface" "nic" {
 
     ip_configuration {
         name                          = "${azurerm_resource_group.rg.name}-ipconfig"
+        subnet_id                     = "${azurerm_subnet.subnet.id}"
+        private_ip_address_allocation = "Dynamic"
+    }
+}
+
+resource "azurerm_network_interface" "nic2" {
+    name                = "${azurerm_resource_group.rg.name}-nic"
+    location            = "${azurerm_resource_group.rg.location}"
+    resource_group_name = "${azurerm_resource_group.rg.name}"
+
+    ip_configuration {
+        name                          = "${azurerm_resource_group.rg.name}-ipconfig"
         subnet_id                     = "${azurerm_subnet.subnet2.id}"
         private_ip_address_allocation = "Dynamic"
     }
@@ -180,6 +192,77 @@ resource "azurerm_virtual_machine" "vm" {
     }
 }
 
+
+#
+# Subnet VM
+#
+resource "azurerm_virtual_machine" "vm" { 
+    name                  = "${azurerm_resource_group.rg.name}-vm-2"
+    location              = "${azurerm_resource_group.rg.location}"
+    resource_group_name   = "${azurerm_resource_group.rg.name}"
+    vm_size               = "${var.vm_size}"
+    network_interface_ids = ["${azurerm_network_interface.nic2.id}"]
+
+    connection {
+        type                = "ssh"
+        bastion_host        = "${azurerm_public_ip.bastion_pip.fqdn}"
+        bastion_user        = "${var.username}"
+        bastion_private_key = "${file(var.private_key_path)}"
+        host                = "${element(azurerm_network_interface.nic2.*.private_ip_address, count.index)}"
+        user                = "${var.username}"
+        private_key         = "${file(var.private_key_path)}"
+    }
+
+    storage_image_reference {
+        publisher = "${var.image_publisher}"
+        offer     = "${var.image_offer}"
+        sku       = "${var.image_sku}"
+        version   = "${var.image_version}"
+    }
+
+    storage_os_disk {
+        name              = "${var.hostname}-osdisk"
+        managed_disk_type = "Standard_LRS"
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+    }
+
+    storage_data_disk {
+        name              = "${var.hostname}-datadisk"
+        managed_disk_id   = "${azurerm_managed_disk.datadisk.id}"
+        managed_disk_type = "Standard_LRS"
+        disk_size_gb      = "1023"
+        create_option     = "Attach"
+        lun               = 0
+    }
+
+    os_profile {
+        computer_name  = "${var.hostname}"
+        admin_username = "${var.username}"
+        admin_password = "${var.password}"
+    }
+
+    os_profile_linux_config {
+        disable_password_authentication = true
+        ssh_keys {
+            path     = "/home/${var.username}/.ssh/authorized_keys"
+            key_data = "${file(var.public_key_path)}"
+        }
+    }
+
+    boot_diagnostics {
+        enabled     = true
+        storage_uri = "${azurerm_storage_account.stor.primary_blob_endpoint}"
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo apt-get update && sudo apt-get install nginx -y",
+            "echo 'Hello Subnet2!' > /etc/nginx/",
+        ]
+    }
+}
+
 #
 # Bastion Host
 #
@@ -218,7 +301,7 @@ resource "azurerm_network_interface" "bastion_nic" {
 
     ip_configuration {
         name                          = "${azurerm_resource_group.rg.name}-bastion-ipconfig"
-        subnet_id                     = "${azurerm_subnet.subnet2.id}"
+        subnet_id                     = "${azurerm_subnet.subnet.id}" # Add anotherNIC on subnet 2
         private_ip_address_allocation = "Dynamic"
         public_ip_address_id          = "${azurerm_public_ip.bastion_pip.id}"
     }
