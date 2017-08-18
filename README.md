@@ -2,11 +2,11 @@
 
 ## Deploy Terraform Executor
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmichael-golfi%2Fterraform-app-gateway-2-vm%2Ftwosubnet%2Ftemplate%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmichael-golfi%2Fterraform-app-gateway-2-vm%2Fmaster%2Ftemplate%2Fazuredeploy.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
-<a href="http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fmichael-golfi%2Fterraform-app-gateway-2-vm%2Ftwosubnet%2Ftemplate%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmichael-golfi%2Fterraform-app-gateway-2-vm%2Fmaster%2Ftemplate%2Fazuredeploy.json" target="_blank">
     <img src="http://armviz.io/visualizebutton.png"/>
 </a>
 
