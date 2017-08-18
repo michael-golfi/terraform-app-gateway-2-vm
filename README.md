@@ -2,11 +2,11 @@
 
 ## Deploy Terraform Executor
 
-<a href="https://raw.githubusercontent.com/michael-golfi/terraform-test/twosubnet/template/azuredeploy.json?token=ABUv1LjKSwrP_i2Iq6C79tMoTfjUgTe9ks5ZoHd1wA%3D%3D" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https://raw.githubusercontent.com/michael-golfi/terraform-test/twosubnet/template/azuredeploy.json?token=ABUv1CujqR07qJ-c7KWg-f_3EynOm3POks5ZoHf3wA%3D%3D" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
-<a href="https://raw.githubusercontent.com/michael-golfi/terraform-test/twosubnet/template/azuredeploy.parameters.json?token=ABUv1KfjMzkhTwDOBNYD9lOtLXgc6cBNks5ZoHeHwA%3D%3D" target="_blank">
+<a href="http://armviz.io/#/?load=https://raw.githubusercontent.com/michael-golfi/terraform-test/twosubnet/template/azuredeploy.json?token=ABUv1CujqR07qJ-c7KWg-f_3EynOm3POks5ZoHf3wA%3D%3D" target="_blank">
     <img src="http://armviz.io/visualizebutton.png"/>
 </a>
 
