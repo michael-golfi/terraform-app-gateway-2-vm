@@ -80,13 +80,24 @@ resource "azurerm_application_gateway" "network" {
         frontend_port_name                    = "${azurerm_virtual_network.vnet.name}-feport"
         protocol                              = "Http"
     }
-    request_routing_rule {
-        name                       = "${azurerm_virtual_network.vnet.name}-rqrt"
-        rule_type                  = "Basic"
-        http_listener_name         = "${azurerm_virtual_network.vnet.name}-httplstn"
-        backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap"
-        backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
-    }
+    request_routing_rule [
+        {
+            name                       = "${azurerm_virtual_network.vnet.name}-rqrt"
+            rule_type                  = "PathBasedRouting"
+            http_listener_name         = "${azurerm_virtual_network.vnet.name}-httplstn"
+            backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap"
+            backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
+            url_path_map_name = ""
+        },
+        {
+            name                       = "${azurerm_virtual_network.vnet.name}-rqrt2"
+            rule_type                  = "PathBasedRouting"
+            http_listener_name         = "${azurerm_virtual_network.vnet.name}-httplstn2"
+            backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap2"
+            backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
+            url_path_map_name = ""
+        }
+    ]
 }
 
 resource "azurerm_network_interface" "nic" {
@@ -192,7 +203,10 @@ resource "azurerm_virtual_machine" "vm" {
     }
 
     provisioner "remote-exec" {
-        inline = ["sudo apt-get update && sudo apt-get install nginx -y"]
+        inline = [
+            "sudo apt-get update && sudo apt-get install nginx -y",
+            "curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/vm1.html > /var/www/html/index.nginx-debian.html",
+        ]
     }
 }
 
@@ -262,7 +276,7 @@ resource "azurerm_virtual_machine" "vm" {
     provisioner "remote-exec" {
         inline = [
             "sudo apt-get update && sudo apt-get install nginx -y",
-            "echo 'Hello Subnet2!' > /etc/nginx/",
+            "curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/vm1.html > /var/www/html/index.nginx-debian.html",
         ]
     }
 }
