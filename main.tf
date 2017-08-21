@@ -83,11 +83,10 @@ resource "azurerm_application_gateway" "network" {
     request_routing_rule [
         {
             name                       = "${azurerm_virtual_network.vnet.name}-rqrt"
-            rule_type                  = "PathBasedRouting"
+            rule_type                  = "Basic"
             http_listener_name         = "${azurerm_virtual_network.vnet.name}-httplstn"
             backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap"
             backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
-            url_path_map_name = ""
         },
         {
             name                       = "${azurerm_virtual_network.vnet.name}-rqrt2"
