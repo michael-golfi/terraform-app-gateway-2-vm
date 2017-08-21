@@ -59,10 +59,14 @@ resource "azurerm_application_gateway" "network" {
         name         = "${azurerm_virtual_network.vnet.name}-feip"  
         public_ip_address_id = "${azurerm_public_ip.pip.id}"
     }
-    backend_address_pool {
+    backend_address_pool [{
         name = "${azurerm_virtual_network.vnet.name}-beap"
         ip_address_list = ["${element(azurerm_network_interface.nic.*.private_ip_address, count.index)}"] 
-    }
+    },
+    {
+        name = "${azurerm_virtual_network.vnet.name}-beap2"
+        ip_address_list = ["${element(azurerm_network_interface.nic2.*.private_ip_address, count.index)}"] 
+    }]
     backend_http_settings {
         name                  = "${azurerm_virtual_network.vnet.name}-be-htst"
         cookie_based_affinity = "Disabled"

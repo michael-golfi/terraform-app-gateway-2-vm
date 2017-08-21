@@ -27,7 +27,7 @@ variable "dns_name" {
 }
 
 variable "location" {
-	description = "The location/region where the virtual network is created. Changing this forces a new resource to be created."
+	description = "The location/region where Ahe virtual network is created. Changing this forces a new resource to be created."
 	default     = "southcentralus"
 }
 
