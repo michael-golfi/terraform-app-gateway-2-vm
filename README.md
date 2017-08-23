@@ -39,6 +39,30 @@ $ terraform init && terraform apply
 # Enter deployment variables in the prompt
 ```
 
+### Connecting to a private network VM
+
+```
+Host bastion
+  Hostname migolfi-rg-1-bastion.southcentralus.cloudapp.azure.com
+  User ubuntu
+  PasswordAuthentication no
+  PubkeyAuthentication yes
+
+Host vm1
+  Hostname 10.254.1.4
+  User ubuntu
+  PasswordAuthentication no
+  PubkeyAuthentication yes
+  ProxyCommand ssh ubuntu@bastion nc %h %p
+
+Host vm2
+  Hostname 10.254.2.4
+  User ubuntu
+  PasswordAuthentication no
+  PubkeyAuthentication yes
+  ProxyCommand ssh ubuntu@bastion nc %h %p
+```
+
 ## Terraform Files
 
 ### main.tf
