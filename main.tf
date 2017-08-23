@@ -13,7 +13,7 @@ resource "azurerm_resource_group" "rg" {
 resource "azurerm_virtual_network" "vnet" {
     name                = "${var.virtual_network_name}"
     location            = "${azurerm_resource_group.rg.location}"
-    address_space       = ["${var.address_space}"]
+    address_space       = ["10.254.0.0/16"]
     resource_group_name = "${azurerm_resource_group.rg.name}"
 }
 
@@ -21,14 +21,21 @@ resource "azurerm_subnet" "subnet" {
     name                 = "${azurerm_resource_group.rg.name}-subnet"
     virtual_network_name = "${azurerm_virtual_network.vnet.name}"
     resource_group_name  = "${azurerm_resource_group.rg.name}"
-    address_prefix       = "${var.subnet_prefix}"
+    address_prefix       = "10.254.0.0/24"
 }
 
 resource "azurerm_subnet" "subnet2" {
     name                 = "${azurerm_resource_group.rg.name}-subnet2"
     virtual_network_name = "${azurerm_virtual_network.vnet.name}"
     resource_group_name  = "${azurerm_resource_group.rg.name}"
-    address_prefix       = "${var.subnet2_prefix}"
+    address_prefix       = "10.254.1.0/24"
+}
+
+resource "azurerm_subnet" "subnet3" {
+    name                 = "${azurerm_resource_group.rg.name}-subnet3"
+    virtual_network_name = "${azurerm_virtual_network.vnet.name}"
+    resource_group_name  = "${azurerm_resource_group.rg.name}"
+    address_prefix       = "10.254.2.0/24"
 }
 
 resource "azurerm_public_ip" "pip" {
@@ -42,6 +49,7 @@ resource "azurerm_application_gateway" "network" {
     name                = "${azurerm_virtual_network.vnet.name}"
     location            = "${azurerm_resource_group.rg.location}"
     resource_group_name = "${azurerm_resource_group.rg.name}"
+    depends_on = ["azurerm_virtual_network.vnet", "azurerm_subnet.subnet", "azurerm_subnet.subnet2", "azurerm_subnet.subnet3"]
     sku {
         name           = "Standard_Small"
         tier           = "Standard"
@@ -59,21 +67,28 @@ resource "azurerm_application_gateway" "network" {
         name         = "${azurerm_virtual_network.vnet.name}-feip"  
         public_ip_address_id = "${azurerm_public_ip.pip.id}"
     }
-    backend_address_pool [{
+    backend_address_pool = [{
         name = "${azurerm_virtual_network.vnet.name}-beap"
-        ip_address_list = ["${element(azurerm_network_interface.nic.*.private_ip_address, count.index)}"] 
+        ip_address_list = ["10.254.1.4", "10.254.1.5"]
     },
     {
         name = "${azurerm_virtual_network.vnet.name}-beap2"
-        ip_address_list = ["${element(azurerm_network_interface.nic2.*.private_ip_address, count.index)}"] 
+        ip_address_list = ["10.254.2.4", "10.254.2.5"]
     }]
-    backend_http_settings {
+    backend_http_settings = [{
         name                  = "${azurerm_virtual_network.vnet.name}-be-htst"
         cookie_based_affinity = "Disabled"
         port                  = 80
         protocol              = "Http"
         request_timeout        = 1
-    }
+    },
+    {
+        name                  = "${azurerm_virtual_network.vnet.name}-be-htst2"
+        cookie_based_affinity = "Disabled"
+        port                  = 80
+        protocol              = "Http"
+        request_timeout        = 1
+    }]
     http_listener {
         name                                  = "${azurerm_virtual_network.vnet.name}-httplstn"
         frontend_ip_configuration_name        = "${azurerm_virtual_network.vnet.name}-feip"
@@ -82,18 +97,17 @@ resource "azurerm_application_gateway" "network" {
     }
     request_routing_rule {
             name                       = "${azurerm_virtual_network.vnet.name}-rqrt"
-            rule_type                  = "Basic"
+            rule_type                  = "PathBasedRouting"
             http_listener_name         = "${azurerm_virtual_network.vnet.name}-httplstn"
             backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap"
             backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
+            url_path_map_name = "${azurerm_virtual_network.vnet.name}-path-map"
     }
-    url_path_map [
-        {
+    url_path_map = [{
             name                       = "${azurerm_virtual_network.vnet.name}-path-map"
             default_backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap"
             default_backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
-            path_rule [
-                {
+            path_rule = [{
                     name = "VM1"
                     paths = ["/vm1"]
                     backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap"
@@ -104,50 +118,36 @@ resource "azurerm_application_gateway" "network" {
                     paths = ["/vm2"]
                     backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap2"
                     backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
-                }
-            ]
-        }
-    ]
+                }]
+    }]
 }
 
 resource "azurerm_network_interface" "nic" {
     name                = "${azurerm_resource_group.rg.name}-nic"
     location            = "${azurerm_resource_group.rg.location}"
     resource_group_name = "${azurerm_resource_group.rg.name}"
-
-    ip_configuration {
-        name                          = "${azurerm_resource_group.rg.name}-ipconfig"
-        subnet_id                     = "${azurerm_subnet.subnet.id}"
-        private_ip_address_allocation = "Dynamic"
-    }
-}
-
-resource "azurerm_network_interface" "nic2" {
-    name                = "${azurerm_resource_group.rg.name}-nic"
-    location            = "${azurerm_resource_group.rg.location}"
-    resource_group_name = "${azurerm_resource_group.rg.name}"
+    depends_on = ["azurerm_application_gateway.network"]
 
     ip_configuration {
         name                          = "${azurerm_resource_group.rg.name}-ipconfig"
         subnet_id                     = "${azurerm_subnet.subnet2.id}"
-        private_ip_address_allocation = "Dynamic"
+        private_ip_address_allocation = "Static"
+        private_ip_address = "10.254.1.4"
     }
 }
 
-resource "azurerm_storage_account" "stor" {
-    name                = "${var.dns_name}stor"
+resource "azurerm_network_interface" "nic2" {
+    name                = "${azurerm_resource_group.rg.name}-nic2"
     location            = "${azurerm_resource_group.rg.location}"
     resource_group_name = "${azurerm_resource_group.rg.name}"
-    account_type        = "${var.storage_account_type}"
-}
+    depends_on = ["azurerm_application_gateway.network"]
 
-resource "azurerm_managed_disk" "datadisk" {
-    name                 = "${var.hostname}-datadisk"
-    location             = "${azurerm_resource_group.rg.location}"
-    resource_group_name  = "${azurerm_resource_group.rg.name}"
-    storage_account_type = "Standard_LRS"
-    create_option        = "Empty"
-    disk_size_gb         = "1023"
+    ip_configuration{
+        name                          = "${azurerm_resource_group.rg.name}-ipconfig2"
+        subnet_id                     = "${azurerm_subnet.subnet3.id}"
+        private_ip_address_allocation = "Static"
+        private_ip_address = "10.254.2.4"
+    }
 }
 
 #
@@ -184,15 +184,6 @@ resource "azurerm_virtual_machine" "vm" {
         create_option     = "FromImage"
     }
 
-    storage_data_disk {
-        name              = "${var.hostname}-datadisk"
-        managed_disk_id   = "${azurerm_managed_disk.datadisk.id}"
-        managed_disk_type = "Standard_LRS"
-        disk_size_gb      = "1023"
-        create_option     = "Attach"
-        lun               = 0
-    }
-
     os_profile {
         computer_name  = "${var.hostname}"
         admin_username = "${var.username}"
@@ -207,26 +198,21 @@ resource "azurerm_virtual_machine" "vm" {
         }
     }
 
-    boot_diagnostics {
-        enabled     = true
-        storage_uri = "${azurerm_storage_account.stor.primary_blob_endpoint}"
-    }
-
-    provisioner "remote-exec" {
-        inline = [
+   provisioner "remote-exec" {
+       inline = [
             "sudo apt-get update && sudo apt-get install nginx -y",
-            "curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/vm1.html > /var/www/html/index.nginx-debian.html",
-            "curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/nginx1.conf > /etc/nginx/sites-enabled/default",
-            "nginx -s reload",
-        ]
-    }
+            "sudo bash -c 'curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/vm1.html > /var/www/html/index.nginx-debian.html'",
+            "sudo bash -c 'curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/nginx1.conf > /etc/nginx/sites-enabled/default'",
+            "sudo nginx -s reload",
+       ]
+   }
 }
 
 
 #
 # Subnet VM
 #
-resource "azurerm_virtual_machine" "vm" { 
+resource "azurerm_virtual_machine" "vm2" { 
     name                  = "${azurerm_resource_group.rg.name}-vm-2"
     location              = "${azurerm_resource_group.rg.location}"
     resource_group_name   = "${azurerm_resource_group.rg.name}"
@@ -251,23 +237,14 @@ resource "azurerm_virtual_machine" "vm" {
     }
 
     storage_os_disk {
-        name              = "${var.hostname}-osdisk"
+        name              = "${var.hostname}-osdisk2"
         managed_disk_type = "Standard_LRS"
         caching           = "ReadWrite"
         create_option     = "FromImage"
     }
 
-    storage_data_disk {
-        name              = "${var.hostname}-datadisk"
-        managed_disk_id   = "${azurerm_managed_disk.datadisk.id}"
-        managed_disk_type = "Standard_LRS"
-        disk_size_gb      = "1023"
-        create_option     = "Attach"
-        lun               = 0
-    }
-
     os_profile {
-        computer_name  = "${var.hostname}"
+        computer_name  = "${var.hostname}2"
         admin_username = "${var.username}"
         admin_password = "${var.password}"
     }
@@ -280,17 +257,12 @@ resource "azurerm_virtual_machine" "vm" {
         }
     }
 
-    boot_diagnostics {
-        enabled     = true
-        storage_uri = "${azurerm_storage_account.stor.primary_blob_endpoint}"
-    }
-
     provisioner "remote-exec" {
         inline = [
             "sudo apt-get update && sudo apt-get install nginx -y",
-            "curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/vm2.html > /var/www/html/index.nginx-debian.html",
-            "curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/nginx2.conf > /etc/nginx/sites-enabled/default",
-            "nginx -s reload",
+            "sudo bash -c 'curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/vm2.html > /var/www/html/index.nginx-debian.html'",
+            "sudo bash -c 'curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/nginx2.conf > /etc/nginx/sites-enabled/default'",
+            "sudo nginx -s reload",
         ]
     }
 }
@@ -330,12 +302,29 @@ resource "azurerm_network_interface" "bastion_nic" {
     location                  = "${azurerm_resource_group.rg.location}"
     resource_group_name       = "${azurerm_resource_group.rg.name}"
     network_security_group_id = "${azurerm_network_security_group.bastion_nsg.id}"
-
+    depends_on = ["azurerm_application_gateway.network"]
+    
     ip_configuration {
         name                          = "${azurerm_resource_group.rg.name}-bastion-ipconfig"
-        subnet_id                     = "${azurerm_subnet.subnet.id}" # Add anotherNIC on subnet 2
-        private_ip_address_allocation = "Dynamic"
+        subnet_id                     = "${azurerm_subnet.subnet2.id}"
+        private_ip_address_allocation = "Static"
+        private_ip_address = "10.254.1.5"
         public_ip_address_id          = "${azurerm_public_ip.bastion_pip.id}"
+    }
+}
+
+resource "azurerm_network_interface" "bastion_nic2" {
+    name                      = "${azurerm_resource_group.rg.name}-bastion-nic2"
+    location                  = "${azurerm_resource_group.rg.location}"
+    resource_group_name       = "${azurerm_resource_group.rg.name}"
+    network_security_group_id = "${azurerm_network_security_group.bastion_nsg.id}"
+    depends_on = ["azurerm_application_gateway.network"]
+
+    ip_configuration {
+        name                          = "${azurerm_resource_group.rg.name}-bastion-ipconfig2"
+        subnet_id                     = "${azurerm_subnet.subnet3.id}"
+        private_ip_address_allocation = "Static"
+        private_ip_address = "10.254.2.5"
     }
 }
 
@@ -344,7 +333,8 @@ resource "azurerm_virtual_machine" "bastion" {
     location              = "${azurerm_resource_group.rg.location}"
     resource_group_name   = "${azurerm_resource_group.rg.name}"
     vm_size               = "${var.vm_size}"
-    network_interface_ids = ["${azurerm_network_interface.bastion_nic.id}"]
+    primary_network_interface_id = "${azurerm_network_interface.bastion_nic.id}"
+    network_interface_ids = ["${azurerm_network_interface.bastion_nic.id}","${azurerm_network_interface.bastion_nic2.id}"]
     delete_os_disk_on_termination    = true
     delete_data_disks_on_termination = true
 
