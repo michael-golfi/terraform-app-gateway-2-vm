@@ -36,21 +36,6 @@ variable "virtual_network_name" {
 	default     = "vnet"
 }
 
-variable "address_space" {
-	description = "The address space that is used by the virtual network. You can supply more than one address space. Changing this forces a new resource to be created."
-	default     = "10.254.0.0/16"
-}
-
-variable "subnet_prefix" {
-	description = "The address prefix to use for the subnet."
-	default     = "10.254.0.0/24"
-}
-
-variable "subnet2_prefix" {
-	description = "The address prefix to use for the subnet."
-	default     = "10.254.2.0/24"
-}
-
 variable "storage_account_type" {
 	description = "Defines the type of storage account to be created. Valid options are Standard_LRS, Standard_ZRS, Standard_GRS, Standard_RAGRS, Premium_LRS. Changing this is sometimes valid - see the Azure documentation for more information on which types of accounts can be converted into other types."
 	default     = "Standard_LRS"

@@ -126,7 +126,6 @@ resource "azurerm_network_interface" "nic" {
     name                = "${azurerm_resource_group.rg.name}-nic"
     location            = "${azurerm_resource_group.rg.location}"
     resource_group_name = "${azurerm_resource_group.rg.name}"
-    depends_on = ["azurerm_application_gateway.network"]
 
     ip_configuration {
         name                          = "${azurerm_resource_group.rg.name}-ipconfig"
@@ -140,7 +139,6 @@ resource "azurerm_network_interface" "nic2" {
     name                = "${azurerm_resource_group.rg.name}-nic2"
     location            = "${azurerm_resource_group.rg.location}"
     resource_group_name = "${azurerm_resource_group.rg.name}"
-    depends_on = ["azurerm_application_gateway.network"]
 
     ip_configuration{
         name                          = "${azurerm_resource_group.rg.name}-ipconfig2"
@@ -302,7 +300,6 @@ resource "azurerm_network_interface" "bastion_nic" {
     location                  = "${azurerm_resource_group.rg.location}"
     resource_group_name       = "${azurerm_resource_group.rg.name}"
     network_security_group_id = "${azurerm_network_security_group.bastion_nsg.id}"
-    depends_on = ["azurerm_application_gateway.network"]
     
     ip_configuration {
         name                          = "${azurerm_resource_group.rg.name}-bastion-ipconfig"
@@ -318,7 +315,6 @@ resource "azurerm_network_interface" "bastion_nic2" {
     location                  = "${azurerm_resource_group.rg.location}"
     resource_group_name       = "${azurerm_resource_group.rg.name}"
     network_security_group_id = "${azurerm_network_security_group.bastion_nsg.id}"
-    depends_on = ["azurerm_application_gateway.network"]
 
     ip_configuration {
         name                          = "${azurerm_resource_group.rg.name}-bastion-ipconfig2"
