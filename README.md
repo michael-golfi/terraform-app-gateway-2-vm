@@ -2,23 +2,11 @@
 
 ## Description
 
-This template allows you to deploy an Azure Gateway, that routes traffic to a Linux VM running NGNIX. The Linux VM does not have a public IP address, since it gets its IP from the private subnet behind the Application Gateway. 
+This template allows you to deploy an Azure Gateway, that routes traffic to a Linux VM running NGINX via a private subnet. The Linux VM does not have a public IP address, since it gets its IP from the private subnet behind the Application Gateway. A Bastion Host is required to provide access (via SSH) to this VM from the extenal network.
 
-In order to access the private subnet, we have deployed a Bastion Host (Jumpbox) in the solution to use as an intermediary. The Bastion host is also used to execute remote scripts in a VM which does not have a public IP. The connection block in the "vm" resource demonstrates this functionality. The connection block shows the use of a Bastion host as an intermediary between the target "host" and the Terraform executor.
+The use of a Bastion Host is a recomended security practice. The Bastion host is commonly used to execute remote scripts in a VM which does not have a public IP and Terraform makes it very easy to add/remove a Bastion Host from a deployment when its needed.
 
-```hcl
-    connection {
-        type                = "ssh"
-        bastion_host        = "${azurerm_public_ip.bastion_pip.fqdn}"
-        bastion_user        = "${var.username}"
-        bastion_private_key = "${file(var.private_key_path)}"
-        host                = "${element(azurerm_network_interface.nic.*.private_ip_address, count.index)}"
-        user                = "${var.username}"
-        private_key         = "${file(var.private_key_path)}"
-    }
-```
-
-**Note:** The Azure Application Gateway may take up to 17 minutes to be completely deployed and configured.
+Note: The Azure Application Gateway may take up to 17 minutes to be completely deployed and configured.
 
 ## Architecture of Deployed Solution
 
@@ -37,6 +25,35 @@ In order to use this sample, we recommend creating SSH keys to secure both the L
 ```bash
 $ terraform init && terraform apply
 # Enter deployment variables in the prompt
+```
+
+### Bastion Host Connectivity
+
+In order to connect from the Bastion Host to the private Subnet. We make use of the Connection Block. The connection block in the "vm" resource (the Linux VM in our example) demonstrates this functionality. The connection block shows the use of a Bastion host as an intermediary between the target "host" (Linux VM in our example) and the Terraform executor.
+
+```hcl
+    connection {
+        type                = "ssh"
+        bastion_host        = "${azurerm_public_ip.bastion_pip.fqdn}"
+        bastion_user        = "${var.username}"
+        bastion_private_key = "${file(var.private_key_path)}"
+        host                = "${element(azurerm_network_interface.nic.*.private_ip_address, count.index)}"
+        user                = "${var.username}"
+        private_key         = "${file(var.private_key_path)}"
+    }
+```
+
+In addtion we need to include a section that describes the commands to be executed in the Linux VM. This is included in main.tf on the "vm" resource section:
+
+```hcl
+    provisioner "remote-exec" {
+        inline = [
+            "sudo apt-get update && sudo apt-get install nginx -y",
+            "sudo bash -c 'curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/vm2.html > /var/www/html/index.nginx-debian.html'",
+            "sudo bash -c 'curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/nginx2.conf > /etc/nginx/sites-enabled/default'",
+            "sudo nginx -s reload",
+        ]
+    }
 ```
 
 ### Connecting to the Machines
@@ -92,14 +109,13 @@ Please go [here](https://www.terraform.io/docs/providers/azurerm/) for full inst
 |subnet_prefix	|The address prefix to use for the app gateway subnet.	|10.254.0.0/24|
 |subnet2_prefix	|The address prefix to use for the first machine subnet.	|10.254.1.0/24|
 |subnet3_prefix	|The address prefix to use for the second machine subnet.	|10.254.2.0/24|
-|storage_account_type	|Defines the type of storage account to be created. Valid options are Standard_LRS, Standard_ZRS, Standard_GRS, Standard_RAGRS, Premium_LRS. Changing this is sometimes valid - see the Azure documentation for more information on which types of accounts can be converted into other types.	|Standard_LRS|
 |vm_size	|Specifies the size of the virtual machine.	|Standard_A0|
 |image_publisher	|name of the publisher of the image (az vm image list)	|Canonical|
 |image_offer	|the name of the offer (az vm image list)	|UbuntuServer|
 |image_sku	|image sku to apply (az vm image list)	|16.04-LTS|
 |image_version	|version of the image to apply (az vm image list)	|latest|
 |username	|administrator user name	|ubuntu|
-|password	|administrator password (recommended to disable password auth)	|C0c0nut1234!|
+|password	|administrator password (password login is disabled, this is only used for root)	|C0c0nut1234!|
 |private_key_path	|Path to the private ssh key used to connect to the machine within the gateway.	|/home/ubuntu/.ssh/id_rsa|
 |public_key_path	|Path to your SSH Public Key	|/home/ubuntu/.ssh/id_rsa.pub|
 
