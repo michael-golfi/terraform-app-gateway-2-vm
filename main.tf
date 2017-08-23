@@ -49,7 +49,7 @@ resource "azurerm_application_gateway" "network" {
     name                = "${azurerm_virtual_network.vnet.name}"
     location            = "${azurerm_resource_group.rg.location}"
     resource_group_name = "${azurerm_resource_group.rg.name}"
-    depends_on = ["azurerm_virtual_network.vnet", "azurerm_subnet.subnet", "azurerm_subnet.subnet2", "azurerm_subnet.subnet3"]
+    
     sku {
         name           = "Standard_Small"
         tier           = "Standard"
@@ -109,15 +109,15 @@ resource "azurerm_application_gateway" "network" {
             default_backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
             path_rule = [{
                     name = "VM1"
-                    paths = ["/vm1"]
+                    paths = ["/vm1/*"]
                     backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap"
                     backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
                 },
                 {
                     name = "VM2"
-                    paths = ["/vm2"]
+                    paths = ["/vm2/*"]
                     backend_address_pool_name  = "${azurerm_virtual_network.vnet.name}-beap2"
-                    backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst"
+                    backend_http_settings_name = "${azurerm_virtual_network.vnet.name}-be-htst2"
                 }]
     }]
 }
@@ -198,14 +198,14 @@ resource "azurerm_virtual_machine" "vm" {
         }
     }
 
-   provisioner "remote-exec" {
-       inline = [
+    provisioner "remote-exec" {
+        inline = [
             "sudo apt-get update && sudo apt-get install nginx -y",
             "sudo bash -c 'curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/vm1.html > /var/www/html/index.nginx-debian.html'",
             "sudo bash -c 'curl https://raw.githubusercontent.com/michael-golfi/terraform-app-gateway-2-vm/master/assets/nginx1.conf > /etc/nginx/sites-enabled/default'",
             "sudo nginx -s reload",
-       ]
-   }
+        ]
+    }
 }
 
 
@@ -310,13 +310,7 @@ resource "azurerm_network_interface" "bastion_nic" {
         private_ip_address_allocation = "Static"
         private_ip_address = "10.254.1.5"
         public_ip_address_id          = "${azurerm_public_ip.bastion_pip.id}"
-    },
-    {
-        name                          = "${azurerm_resource_group.rg.name}-bastion-ipconfig2"
-        subnet_id                     = "${azurerm_subnet.subnet2.id}"
-        private_ip_address_allocation = "Dynamic"
-        public_ip_address_id          = "${azurerm_public_ip.bastion_pip.id}"
-    }]
+    }
 }
 
 resource "azurerm_network_interface" "bastion_nic2" {
