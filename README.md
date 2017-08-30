@@ -2,7 +2,9 @@
 
 ## Description
 
-This template allows you to deploy an Azure Gateway, that routes traffic to a Linux VM running NGINX via a private subnet. The Linux VM does not have a public IP address, since it gets its IP from the private subnet behind the Application Gateway. A Bastion Host is required to provide access (via SSH) to this VM from the extenal network.
+This template allows you to deploy an Azure Gateway, that routes traffic to Linux VMs running NGINX via private subnets. The Linux VMs do not have public IP addresses, since they get their IP from the private subnets behind the Application Gateway. A Bastion Host is required to provide access (via SSH) to these VMs from the extenal network.
+
+Web traffic towards the Application Gateway will be routed to the VMs based on the URL path. Any path prefixed with `/vm1/*` will be forwarded to Linux VM 1 and a path prefixed with `/vm2/*` will be forwarded to Linux VM 2.
 
 The use of a Bastion Host is a recomended security practice. The Bastion host is commonly used to execute remote scripts in a VM which does not have a public IP and Terraform makes it very easy to add/remove a Bastion Host from a deployment when its needed.
 
