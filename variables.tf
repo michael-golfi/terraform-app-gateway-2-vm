@@ -27,7 +27,7 @@ variable "dns_name" {
 }
 
 variable "location" {
-	description = "The location/region where Ahe virtual network is created. Changing this forces a new resource to be created."
+	description = "The location/region where the virtual network is created. Changing this forces a new resource to be created."
 	default     = "southcentralus"
 }
 
@@ -67,8 +67,8 @@ variable "username" {
 }
 
 variable "password" {
-	description = "administrator password"
-	default 	= "C0c0nut1234!"
+	description = "administrator password (recommended to disable password auth)"
+	default		= "C0c0nut1234!"
 }
 
 variable "private_key_path" {

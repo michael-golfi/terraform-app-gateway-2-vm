@@ -96,30 +96,26 @@ Terraform requires the parameters `client_id`, `client_secret`, `subscription_id
 
 Please go [here](https://www.terraform.io/docs/providers/azurerm/) for full instructions on how to create this to populate your `provider` block.
 
-| Variable      | Description    |
-| ------------- |:-------------:|
-|subscription_id	|The subscription to create the deployment with.	||
-|client_id	|The client ID of the service account (principal).	||
-|client_secret	|The client secret of the service account (principal).	||
-|tenant_id	|The ID of the Azure Active Directory Tenant.	||
-|resource_group	|The name of the resource group in which to create the virtual network.	||
-|hostname	|VM name referenced also in storage-related names.	||
-|dns_name	| Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.	||
-|location	|The location/region where the virtual network is created. Changing this forces a new resource to be created.	|southcentralus|
-|virtual_network_name	|The name for the virtual network.	|vnet|
-|address_space	|The address space that is used by the virtual network. You can supply more than one address space. Changing this forces a new resource to be created.	|10.254.0.0/16|
-|subnet_prefix	|The address prefix to use for the app gateway subnet.	|10.254.0.0/24|
-|subnet2_prefix	|The address prefix to use for the first machine subnet.	|10.254.1.0/24|
-|subnet3_prefix	|The address prefix to use for the second machine subnet.	|10.254.2.0/24|
-|vm_size	|Specifies the size of the virtual machine.	|Standard_A0|
-|image_publisher	|name of the publisher of the image (az vm image list)	|Canonical|
-|image_offer	|the name of the offer (az vm image list)	|UbuntuServer|
-|image_sku	|image sku to apply (az vm image list)	|16.04-LTS|
-|image_version	|version of the image to apply (az vm image list)	|latest|
-|username	|administrator user name	|ubuntu|
-|password	|administrator password (password login is disabled, this is only used for root)	|C0c0nut1234!|
-|private_key_path	|Path to the private ssh key used to connect to the machine within the gateway.	|/home/ubuntu/.ssh/id_rsa|
-|public_key_path	|Path to your SSH Public Key	|/home/ubuntu/.ssh/id_rsa.pub|
+| Variable      | Description    | Default |
+| ------------- | -------------- | ------- |
+| subscription_id | The subscription to create the deployment with. |  |
+| client_id | The client ID of the service account (principal). |  |
+| client_secret | The client secret of the service account (principal). |  |
+| tenant_id | The ID of the Azure Active Directory Tenant. |  |
+| resource_group | The name of the resource group in which to create the virtual network. |  |
+| hostname | VM name referenced also in storage-related names. |  |
+| dns_name |  Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system. |  |
+| location | The location/region where the virtual network is created. Changing this forces a new resource to be created. | southcentralus |
+| virtual_network_name | The name for the virtual network. | vnet |
+| vm_size | Specifies the size of the virtual machine. | Standard_A0 |
+| image_publisher | name of the publisher of the image (az vm image list) | Canonical |
+| image_offer | the name of the offer (az vm image list) | UbuntuServer |
+| image_sku | image sku to apply (az vm image list) | 16.04-LTS |
+| image_version | version of the image to apply (az vm image list) | latest |
+| username | administrator user name | ubuntu |
+| password | administrator password (recommended to disable password auth) | C0c0nut1234! |
+| private_key_path | Path to the private ssh key used to connect to the machine within the gateway. | /home/ubuntu/.ssh/id_rsa |
+| public_key_path | Path to your SSH Public Key | /home/ubuntu/.ssh/id_rsa.pub |
 
 ### outputs.tf
 This data is outputted when `terraform apply` is called, and can be queried using the `terraform output` command.
