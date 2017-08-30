@@ -1,4 +1,4 @@
-# Deployment of the Azure Gateway with a Linux VM and a Bastion Host
+# Deployment of the Azure Gateway with two Linux VMs in separate subnets and a Bastion Host with URL path routing
 
 ## Description
 
@@ -12,7 +12,7 @@ Note: The Azure Application Gateway may take up to 17 minutes to be completely d
 
 The following diagram shows the high level deployment architecture: 
 
-![Azure Gateway deployment architecture](assets/Terraform-Azure-Gateway-Example.png)
+![Azure Gateway deployment architecture](assets/Terraform-Az-Gateway-Example.png)
 
 ## Instructions
 
